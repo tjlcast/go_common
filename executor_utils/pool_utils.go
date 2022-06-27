@@ -11,6 +11,7 @@ import (
 )
 
 type Task struct {
+	Id string
 	Handler  func(v ...interface{})
 	Params   []interface{}
 	Interupt bool
