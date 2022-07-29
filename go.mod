@@ -1,4 +1,5 @@
-module go_common
+module github.com/tjlcast/go_common
+
 
 go 1.16
 
