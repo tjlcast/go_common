@@ -2,7 +2,7 @@ package executor_utils
 
 import (
 	"fmt"
-	"go_common/time_utils"
+	"github.com/tjlcast/go_common/time_utils"
 	"strconv"
 	"testing"
 	"time"
@@ -44,4 +44,28 @@ func TestNewPool(t *testing.T) {
 		}
 	}
 	pool.Close()
+}
+
+func TestNewPool1(t *testing.T) {
+	pool, _ := NewPool(2)
+	tasks := make([]*Task, 10)
+
+	for j:=0; j<10; j++ {
+		i := j
+
+		task := &Task{}
+		tasks[i] = task
+		fmt.Println("Submit the task: " + strconv.Itoa(i))
+		task.Params = []interface{}{strconv.Itoa(i)}
+		task.Handler = func(v ...interface{}) {
+			for !task.Interupt {
+				fmt.Println(v[0].(string) + " is running...")
+				time_utils.WaitSeconds(1)
+			}
+		}
+		err := pool.Put(task)
+		if err != nil {
+			fmt.Printf("Fail to put a task.")
+		}
+	}
 }

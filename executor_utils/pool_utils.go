@@ -109,6 +109,9 @@ func (p *Pool) setStatus(status int64) bool {
 
 var ErrPoolAlreadyClosed = errors.New("pool already closed")
 
+/**
+If there is no valiable thread, `put` will block the current.
+ */
 func (p *Pool) Put(task *Task) error {
 	p.Lock()
 	defer p.Unlock()
