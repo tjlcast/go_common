@@ -41,6 +41,14 @@ func GetSec(key string) (c map[string]string) {
 	return cfgMap[key]
 }
 
+func GetSecV(sec string, key string) (v string) {
+	return cfgMap[sec][key]
+}
+
+func GetGlobalV(key string) (v string) {
+	return cfgMap[DEFAULT_SECTION][key]
+}
+
 func ReloadAllCfg() (c map[string]map[string]string, err error) {
 	return Parse(filePath)
 }
