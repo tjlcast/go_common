@@ -1,4 +1,4 @@
-package utils
+package log_utils
 
 import (
 	"fmt"
@@ -60,9 +60,7 @@ func ConfigLocalFilesystemLogger(logPath string, logFileName string, maxAge time
 }
 
 func init() {
-
 	SetLog(time.Hour*24*7, time.Hour*24)
-	Logger.Info("Config Logger Done")
 }
 
 func ShowReportCaller() {
