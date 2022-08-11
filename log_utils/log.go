@@ -1,7 +1,9 @@
-package log_utils
+package utils
 
 import (
+	"fmt"
 	"path"
+	"runtime"
 	"time"
 
 	nested "github.com/antonfisher/nested-logrus-formatter"
@@ -71,6 +73,110 @@ func SetLogLevel(level log.Level) {
 	Logger.SetLevel(level)
 }
 
+func getTimestampStr() string {
+	now := time.Now()
+	dateString := fmt.Sprintf("%d-%d-%d %d:%d:%d", now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second())
+	return dateString
+}
+
 func TjlTestLog(msg string) {
-	Logger.Info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>tjl test: " + msg)
+	// This is for tjl's test infomation, Will remove in future.
+	pc, file, line, _ := runtime.Caller(1)
+	f := runtime.FuncForPC(pc)
+	msg = fmt.Sprintf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>tjl tes: %s", msg)
+	msg = fmt.Sprintf("\n%s [TJL]\t :%s  at (%s:%d [Method %s])\n", getTimestampStr(), msg, file, line, f.Name())
+	fmt.Println(Yellow(msg))
+}
+
+func TestLog(msg string) {
+	pc, file, line, _ := runtime.Caller(1)
+	f := runtime.FuncForPC(pc)
+	msg = fmt.Sprintf("\n%s [Test]\t :%s  at (%s:%d [Method %s])\n", getTimestampStr(), msg, file, line, f.Name())
+	fmt.Println(Yellow(msg))
+}
+
+func RandLog(msg string, r int) {
+	if r < 0 {
+		r = 10
+	}
+	if int(time.Now().Unix()) % r != 0 {
+		return
+	}
+	pc, file, line, _ := runtime.Caller(1)
+	f := runtime.FuncForPC(pc)
+	msg = fmt.Sprintf("\n%s [Rand%dLog]\t :%s  at (%s:%d [Method %s])\n", getTimestampStr(), r, msg, file, line, f.Name())
+	fmt.Println(Blue(msg))
+}
+
+func wrap(domain string, format string, a ...interface{}) string {
+	format = "["+domain+"] " + format
+	if a==nil || len(a)==0 {
+		return format
+	}
+	return fmt.Sprintf(format, a...)
+}
+
+func TestLogWrap(format string, a ...interface{}) string {
+	return wrap("Test", format, a...)
+}
+
+func MasterLogWrap(format string, a ...interface{}) string {
+	return wrap("Master", format, a...)
+}
+
+func WorkerLogWrap(format string, a ...interface{}) string {
+	return wrap("Worker", format, a...)
+}
+
+func BootLogWrap(format string, a ...interface{}) string {
+	return wrap("Boot", format, a...)
+}
+
+func RepoLogWrap(format string, a ...interface{}) string {
+	return wrap("Repo", format, a...)
+}
+
+func ConsisLogWrap(format string, a ...interface{}) string {
+	return wrap("Consis", format, a...)
+}
+
+const (
+	textBlack = iota + 30
+	textRed
+	textGreen
+	textYellow
+	textBlue
+	textPurple
+	textCyan
+	textWhite
+)
+
+func Black(str string) string {
+	return textColor(textBlack, str)
+}
+
+func Red(str string) string {
+	return textColor(textRed, str)
+}
+func Yellow(str string) string {
+	return textColor(textYellow, str)
+}
+func Green(str string) string {
+	return textColor(textGreen, str)
+}
+func Cyan(str string) string {
+	return textColor(textCyan, str)
+}
+func Blue(str string) string {
+	return textColor(textBlue, str)
+}
+func Purple(str string) string {
+	return textColor(textPurple, str)
+}
+func White(str string) string {
+	return textColor(textWhite, str)
+}
+
+func textColor(color int, str string) string {
+	return fmt.Sprintf("\x1b[0;%dm%s\x1b[0m", color, str)
 }
