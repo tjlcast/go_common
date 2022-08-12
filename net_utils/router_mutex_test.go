@@ -10,8 +10,12 @@ import (
 func TestNewRouterMulti(t *testing.T) {
 	multi := NewRouterMulti(9999)
 
-	multi.AddRestHandle(REST_GET, "/rest", RestApi)
-	multi.AddRpcHandle(&RpcApi{})
+	api := &Api{}
+	multi.AddRpcHandle(api)
+	multi.AddRestHandle(REST_GET, "/rest", api.Rest)
+	multi.AddRestHandle(REST_GET, "/error", api.Error)
+
+	MiddleList = BuildDefaultMiddleList()
 
 	multi.Init()
 	go multi.Loop()
@@ -22,20 +26,24 @@ func TestNewRouterMulti(t *testing.T) {
 		panic(err)
 	}
 	var bo *string
-	err = rp.Call("RpcApi.Hello", "tjl", &bo)
+	err = rp.Call("Api.Hello", "tjl", &bo)
 	if err != nil {
 		panic(err)
 	}
 	select {}
 }
 
-func RestApi(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"msg": "Debug on."})
-}
+type Api struct{}
 
-type RpcApi struct {}
-
-func (r *RpcApi) Hello(request string, response *string) error {
+func (r *Api) Hello(request string, response *string) error {
 	*response = "hello: " + request
 	return nil
+}
+
+func (r *Api) Rest(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"msg": "This is rest api."})
+}
+
+func (r *Api) Error(c *gin.Context) {
+	panic("My error")
 }

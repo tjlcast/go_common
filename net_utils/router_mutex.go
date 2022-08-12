@@ -3,18 +3,29 @@ package net_utils
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/tjlcast/go_common/log_utils"
 	"net"
+	"net/http"
 	"net/rpc"
 	"reflect"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
 
 var (
-	REST_GET = "GET"
-	REST_PUT = "PUT"
-	REST_POST = "POST"
+	REST_GET    = "GET"
+	REST_PUT    = "PUT"
+	REST_POST   = "POST"
 	REST_DELETE = "DELETE"
+
+	/**
+	After rpc call, Before others all.
+
+	Default is nil
+	If empty, do nothing;
+	*/
+	MiddleList []func(c *gin.Context)
 )
 
 /**
@@ -23,10 +34,10 @@ life cycle:
 + AddXXX
 + Init
 + Loop
- */
+*/
 
 type RouterMulti struct {
-	port int
+	port     int
 	listener *net.Listener
 
 	rpcHandles []interface{}
@@ -34,7 +45,7 @@ type RouterMulti struct {
 	restHandles map[string]map[string]gin.HandlerFunc
 
 	RpcServer *rpc.Server
-	Engine *gin.Engine
+	Engine    *gin.Engine
 }
 
 func NewRouterMulti(port int) *RouterMulti {
@@ -89,7 +100,7 @@ func (rm *RouterMulti) Init() []string {
 	for _, rpcHandle := range rm.rpcHandles {
 		clz := reflect.TypeOf(rpcHandle)
 		cname := clz.Elem().Name()
-		for i:=0; i<clz.NumMethod(); i++ {
+		for i := 0; i < clz.NumMethod(); i++ {
 			methodName := clz.Method(i).Name
 			sprintf := fmt.Sprintf("Rpc api: %s.%s\n", cname, methodName)
 			infoCollect = append(infoCollect, sprintf)
@@ -113,6 +124,12 @@ func (rm *RouterMulti) Init() []string {
 		}
 		ctx.Next()
 	})
+	// gin middle
+	if MiddleList != nil && len(MiddleList) > 0 {
+		for _, mid := range MiddleList {
+			rm.Engine.Use(mid)
+		}
+	}
 	funcs := rm.restHandles[REST_GET]
 	for url, f := range funcs {
 		rm.Engine.GET(url, f)
@@ -152,4 +169,38 @@ func (rm *RouterMulti) Loop() {
 	}
 	// rpc
 	rm.RpcServer.Accept(*rm.listener)
+}
+
+func BuildDefaultMiddleList() []func(c *gin.Context) {
+	return []func(c *gin.Context){Recover}
+}
+
+func Recover(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			log_utils.TestLog(fmt.Sprintf("panic: %v\n", r))
+
+			stackInfo := string(debug.Stack())
+			fmt.Println(stackInfo)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code": 500,
+				"msg":  errorToString(r),
+				"data": stackInfo,
+			})
+			//终止后续接口调用，不加的话recover到异常后，还会继续执行接口里后续代码
+			c.Abort()
+		}
+	}()
+	//加载完 defer recover，继续后续接口调用
+	c.Next()
+}
+
+// recover错误，转string
+func errorToString(r interface{}) string {
+	switch v := r.(type) {
+	case error:
+		return v.Error()
+	default:
+		return r.(string)
+	}
 }
