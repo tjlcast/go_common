@@ -74,7 +74,7 @@ func (rm *RouterMulti) AddRestHandle(method string, relativePath string, handler
 	funcs[relativePath] = handler
 }
 
-func (rm *RouterMulti) Init() {
+func (rm *RouterMulti) Init() []string {
 	// listener
 	endpoint := ":" + strconv.Itoa(rm.port)
 	lis, err := GetOrBuildListener(endpoint)
@@ -84,7 +84,7 @@ func (rm *RouterMulti) Init() {
 	rm.listener = &lis
 
 	// rpc
-	infoCollect := []string{"\n>>>>>>>>\n"}
+	infoCollect := []string{}
 	rm.RpcServer = rpc.NewServer()
 	for _, rpcHandle := range rm.rpcHandles {
 		clz := reflect.TypeOf(rpcHandle)
@@ -99,7 +99,7 @@ func (rm *RouterMulti) Init() {
 			panic(err)
 		}
 	}
-	infoCollect = append(infoCollect, "\n>>>>>>>>\n")
+	infoCollect = append(infoCollect)
 
 	// rest
 	rm.Engine = gin.Default()
@@ -116,19 +116,32 @@ func (rm *RouterMulti) Init() {
 	funcs := rm.restHandles[REST_GET]
 	for url, f := range funcs {
 		rm.Engine.GET(url, f)
+
+		sprintf := fmt.Sprintf("Rest api: [%s] %s\n", "GET", url)
+		infoCollect = append(infoCollect, sprintf)
 	}
 	funcs = rm.restHandles[REST_POST]
 	for url, f := range funcs {
 		rm.Engine.POST(url, f)
+
+		sprintf := fmt.Sprintf("Rest api: [%s] %s\n", "POST", url)
+		infoCollect = append(infoCollect, sprintf)
 	}
 	funcs = rm.restHandles[REST_PUT]
 	for url, f := range funcs {
 		rm.Engine.PUT(url, f)
+
+		sprintf := fmt.Sprintf("Rest api: [%s] %s\n", "PUT", url)
+		infoCollect = append(infoCollect, sprintf)
 	}
 	funcs = rm.restHandles[REST_DELETE]
 	for url, f := range funcs {
 		rm.Engine.DELETE(url, f)
+
+		sprintf := fmt.Sprintf("Rest api: [%s] %s\n", "DELETE", url)
+		infoCollect = append(infoCollect, sprintf)
 	}
+	return infoCollect
 }
 
 func (rm *RouterMulti) Loop() {
