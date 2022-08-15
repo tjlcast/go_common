@@ -93,6 +93,13 @@ func TestLog(msg string) {
 	fmt.Println(Yellow(msg))
 }
 
+func ModuleLog(mod string, msg string) {
+	pc, file, line, _ := runtime.Caller(1)
+	f := runtime.FuncForPC(pc)
+	msg = fmt.Sprintf("\n%s [%s]\t :%s  at (%s:%d [Method %s])\n", getTimestampStr(), mod, msg, file, line, f.Name())
+	fmt.Println(Yellow(msg))
+}
+
 func RandLog(msg string, r int) {
 	if r < 0 {
 		r = 10
