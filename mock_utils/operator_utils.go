@@ -1,6 +1,7 @@
 package mock_utils
 
 import (
+	"fmt"
 	"github.com/rs/xid"
 	"github.com/tjlcast/go_common/executor_utils"
 	"github.com/tjlcast/go_common/file_utils"
@@ -16,16 +17,16 @@ import (
 )
 
 var (
-	OP_SUFFIX = "op"
-	OP_POINTER = "."
-	OP_ARGS_SPLITER = "-"
+	OP_SUFFIX          = "op"
+	OP_POINTER         = "."
+	OP_ARGS_SPLITER    = "-"
 	OP_COMMAND_SPLITER = "&"
 )
 
 type Command struct {
-	Name string
+	Name        string
 	CommandType int // 0: once 1: loop
-	handler func(string, string)
+	handler     func(string, string)
 }
 
 func GeneratCommandMapper(funcArr []func(string, string)) map[string]*Command {
@@ -35,9 +36,9 @@ func GeneratCommandMapper(funcArr []func(string, string)) map[string]*Command {
 	for _, funcE := range funcArr {
 		name := GetFuncName(funcE)
 		commands = append(commands, &Command{
-			Name: name,
-			CommandType:0,
-			handler: funcE,
+			Name:        name,
+			CommandType: 0,
+			handler:     funcE,
 		})
 	}
 	for _, command := range commands {
@@ -45,7 +46,6 @@ func GeneratCommandMapper(funcArr []func(string, string)) map[string]*Command {
 	}
 	return commandMapper
 }
-
 
 func GetFuncName(function interface{}) string {
 	originName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
@@ -56,19 +56,20 @@ func GetFuncName(function interface{}) string {
 type MockOPClient struct {
 	Name string
 
-	commands map[string]*Command
+	commands        map[string]*Command
 	clearCommanName string
 
-	pool *executor_utils.Pool
+	pool       *executor_utils.Pool
 	taskMapper map[string][]*executor_utils.Task
 
 	operatorParseChan chan string
-	taskClearChan chan string
+	taskClearChan     chan string
 }
 
 func NewMockOPClient(name string, clearCommand string, commands map[string]*Command) *MockOPClient {
 	client := &MockOPClient{Name: name}
 	client.commands = commands
+
 	if _, ok := client.commands[clearCommand]; !ok {
 		panic("clearCommand is not in commands.")
 	}
@@ -76,7 +77,14 @@ func NewMockOPClient(name string, clearCommand string, commands map[string]*Comm
 	return client
 }
 
-func (c *MockOPClient)clear() {
+func (c *MockOPClient) PrintSample() {
+	for commandName, _ := range c.commands {
+		sprintf := fmt.Sprintf("touch %s-id-arg1.op", commandName)
+		fmt.Println(sprintf)
+	}
+}
+
+func (c *MockOPClient) clear() {
 	for entity := range c.taskClearChan {
 		entityTasks, ok := c.taskMapper[entity]
 		if ok {
@@ -88,7 +96,7 @@ func (c *MockOPClient)clear() {
 	}
 }
 
-func (c *MockOPClient)Loop(basePath string) {
+func (c *MockOPClient) Loop(basePath string) {
 	log_utils.Logger.Info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 	pool, _ := executor_utils.NewPool(32)
@@ -197,7 +205,7 @@ func loop() {
 }
 
 func RandSleep(sec int) {
-	if rand_utils.GenRandInt(2)== 0 {
+	if rand_utils.GenRandInt(2) == 0 {
 		time_utils.WaitSeconds(sec)
 	}
 }
