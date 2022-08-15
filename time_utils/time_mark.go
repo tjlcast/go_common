@@ -13,12 +13,12 @@ func MarkTime() *TimeRecorder {
 }
 
 func (tr *TimeRecorder) Gap() int {
-	return tr.GapMilli()
+	return tr.GapSecond()
 }
 
 func (tr *TimeRecorder) GapMilli() int {
 	now := time.Now()
-	return int(now.Sub(tr.aTime).Seconds())
+	return int(now.Sub(tr.aTime).Milliseconds())
 }
 
 func (tr *TimeRecorder) GapSecond() int {

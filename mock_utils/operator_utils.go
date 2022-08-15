@@ -2,11 +2,11 @@ package mock_utils
 
 import (
 	"github.com/rs/xid"
-	"go_common/executor_utils"
-	"go_common/file_utils"
-	"go_common/log_utils"
-	"go_common/rand_utils"
-	"go_common/time_utils"
+	"github.com/tjlcast/go_common/executor_utils"
+	"github.com/tjlcast/go_common/file_utils"
+	"github.com/tjlcast/go_common/log_utils"
+	"github.com/tjlcast/go_common/rand_utils"
+	"github.com/tjlcast/go_common/time_utils"
 	"os"
 	"reflect"
 	"runtime"
@@ -151,7 +151,7 @@ func (c *MockOPClient)Loop(basePath string) {
 					} else {
 						panic("Unknow commandType: " + strconv.Itoa(command.CommandType))
 					}
-					log_utils.Logger.Info(">>>Exit a search task -> " + entityId)
+					log_utils.Logger.Info(">>>Exit a task -> " + entityId)
 				}
 
 				err := c.pool.Put(task)
