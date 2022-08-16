@@ -148,7 +148,12 @@ func (c *MockOPClient) Loop(basePath string) {
 					defer func() {
 						task.Interupt = true
 					}()
-					log_utils.Logger.Info(">>>Submit a task -> " + entityId)
+
+					taskTypeS := "Once"
+					if command.CommandType==1 {
+						taskTypeS = "Loop"
+					}
+					log_utils.Logger.Info(fmt.Sprintf(">>>Submit a task[%s] id: %s.\n", taskTypeS, entityId))
 					if command.CommandType == 0 {
 						command.handler(entityId, entityArgs)
 					} else if command.CommandType == 1 {

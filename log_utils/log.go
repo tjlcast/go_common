@@ -104,13 +104,17 @@ func RandLog(msg string, r int) {
 	if r < 0 {
 		r = 10
 	}
-	if int(time.Now().Unix()) % r != 0 {
+	if int(time.Now().UnixNano()) % r != 0 {
 		return
 	}
 	pc, file, line, _ := runtime.Caller(1)
 	f := runtime.FuncForPC(pc)
 	msg = fmt.Sprintf("\n%s [Rand%dLog]\t :%s  at (%s:%d [Method %s])\n", getTimestampStr(), r, msg, file, line, f.Name())
 	fmt.Println(Blue(msg))
+}
+
+func Wrap(domain string, format string, a ...interface{}) string {
+	return wrap(domain, format, a...)
 }
 
 func wrap(domain string, format string, a ...interface{}) string {
