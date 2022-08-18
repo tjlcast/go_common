@@ -230,7 +230,7 @@ func RandSleep(sec int) {
 	}
 }
 
-func PQWap(inFunc func(id, arg string) error) func(id, arg string) {
+func PQWrap(inFunc func(id, arg string) error) func(id, arg string) {
 	return func(id, arg string) {
 		split := strings.Split("arg", OP_MULIT_SPLITER)
 		N, _ := strconv.Atoi(split[0])
