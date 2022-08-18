@@ -7,11 +7,11 @@ echo "branch:"$commit_seql
 echo "commit:"$commit_branch
 echo "detail:"$commit_detail
 
+packageName="main"
+
 str="
-package main;
+package "$packageName";
      func GitInfo() string { return \`_commit_seql:\\t $commit_seql\\n_commit_branch:\\t $commit_branch\\n_commit_detail:\\t $commit_detail\\n  \`;}
 "
 
-
-
-echo $str > ./git.go
+echo $str > ../$packageName/git.go
