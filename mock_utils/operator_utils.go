@@ -13,6 +13,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -21,6 +23,7 @@ var (
 	OP_POINTER         = "."
 	OP_ARGS_SPLITER    = "-"
 	OP_COMMAND_SPLITER = "&"
+	OP_MULIT_SPLITER   = "!"
 )
 
 type Command struct {
@@ -29,7 +32,9 @@ type Command struct {
 	handler     func(string, string)
 }
 
-func GeneratCommandMapper(funcArr []func(string, string)) map[string]*Command {
+type FuncMap map[string]*Command
+
+func GeneratCommandMapper(funcArr []func(string, string)) FuncMap {
 	commandMapper := make(map[string]*Command)
 
 	commands := []*Command{}
@@ -47,8 +52,18 @@ func GeneratCommandMapper(funcArr []func(string, string)) map[string]*Command {
 	return commandMapper
 }
 
+func (funcMap FuncMap) Append(name string, aFunc func(string, string)) {
+	command := &Command{
+		Name:        name,
+		CommandType: 0,
+		handler:     aFunc,
+	}
+	funcMap[command.Name] = command
+}
+
 func GetFuncName(function interface{}) string {
 	originName := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
+	originName = originName[strings.LastIndex(originName, "/")+1:]
 	name := strings.Split(originName, ".")[1]
 	return name
 }
@@ -79,7 +94,7 @@ func NewMockOPClient(name string, clearCommand string, commands map[string]*Comm
 
 func (c *MockOPClient) PrintSample() {
 	for commandName, _ := range c.commands {
-		sprintf := fmt.Sprintf("touch %s-id-arg1.op", commandName)
+		sprintf := fmt.Sprintf("touch '%s-id-arg1.op'", commandName)
 		fmt.Println(sprintf)
 	}
 }
@@ -150,7 +165,7 @@ func (c *MockOPClient) Loop(basePath string) {
 					}()
 
 					taskTypeS := "Once"
-					if command.CommandType==1 {
+					if command.CommandType == 1 {
 						taskTypeS = "Loop"
 					}
 					log_utils.Logger.Info(fmt.Sprintf(">>>Submit a task[%s] id: %s.\n", taskTypeS, entityId))
@@ -186,13 +201,13 @@ func (c *MockOPClient) Loop(basePath string) {
 	go func() {
 		for true {
 			time.Sleep(1 * time.Second)
-			commandFiles := file_utils.GetSuffixPaths(".", "op")
+			commandFiles := file_utils.GetSuffixPaths(".", OP_SUFFIX)
 			if len(commandFiles) == 0 {
 				continue
 			}
-			commands := strings.Split(commandFiles[0], "&")
+			commands := strings.Split(commandFiles[0], OP_COMMAND_SPLITER)
 			for _, command := range commands {
-				if !strings.HasSuffix(command, "op") {
+				if !strings.HasSuffix(command, OP_SUFFIX) {
 					continue
 				}
 				OperChan <- command
@@ -212,5 +227,48 @@ func loop() {
 func RandSleep(sec int) {
 	if rand_utils.GenRandInt(2) == 0 {
 		time_utils.WaitSeconds(sec)
+	}
+}
+
+func PQWap(inFunc func(id, arg string) error) func(id, arg string) {
+	return func(id, arg string) {
+		split := strings.Split("arg", OP_MULIT_SPLITER)
+		N, _ := strconv.Atoi(split[0])
+		C, _ := strconv.Atoi(split[1])
+
+		log_utils.TestLog(fmt.Sprintf("PQ test => N: %d C: %d.\n", N, C))
+
+		var sCount uint64 = 0
+		var fCount uint64 = 0
+		var qCost int64 = 0
+
+		pqPool, _ := executor_utils.NewPool(uint64(C))
+
+		var wg sync.WaitGroup
+		wg.Add(N)
+
+		totalCost := time_utils.MarkTime()
+		for i := 0; i < N; i++ {
+			no := i
+			pqTask := &executor_utils.Task{}
+			pqTask.Handler = func(v ...interface{}) {
+				qTime := time_utils.MarkTime()
+				e := inFunc(strconv.Itoa(no), arg)
+				if e != nil {
+					atomic.AddUint64(&fCount, 1)
+				} else {
+					atomic.AddUint64(&sCount, 1)
+				}
+				qgap := qTime.Gap()
+				atomic.AddInt64(&qCost, int64(qgap))
+				wg.Done()
+			}
+			err := pqPool.Put(pqTask)
+			if err != nil {
+				log_utils.TestLog(fmt.Sprintf("Fail to put task(%d) and error: %s.\n", no, err.Error()))
+			}
+		}
+		wg.Wait()
+		log_utils.TestLog(fmt.Sprintf("TotalCost: %d countCost: %d ssize: %d fsize: %d.\n", totalCost.Gap(), qCost, sCount, fCount))
 	}
 }

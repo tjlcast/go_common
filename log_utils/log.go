@@ -2,6 +2,7 @@ package log_utils
 
 import (
 	"fmt"
+	"github.com/tjlcast/go_common/rand_utils"
 	"path"
 	"runtime"
 	"time"
@@ -104,7 +105,7 @@ func RandLog(msg string, r int) {
 	if r < 0 {
 		r = 10
 	}
-	if int(time.Now().UnixNano()) % r != 0 {
+	if int(rand_utils.GenRandInt(r)) == 0 {
 		return
 	}
 	pc, file, line, _ := runtime.Caller(1)
