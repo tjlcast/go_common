@@ -8,6 +8,9 @@ fi
 if [ $osType = mac ]; then
     echo "Choose: mac"
     ./build-mac.sh $appName
+elif [ $osType = win ]; then
+    echo "Choose: win"
+    ./build-win.sh $appName
 else
     echo "Choose: linux"
     ./build-linux.sh $appName
