@@ -1,9 +1,11 @@
 package file_utils
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -77,6 +79,27 @@ func ReadFile(filename string) ([]byte, error) {
 		return nil, errors.New("Fail to open: " + filename)
 	}
 	return byteValue, nil
+}
+
+func ReadFileLines(path string)([]string, error) {
+	fileHanle, err := os.OpenFile(path, os.O_RDONLY, 0666)
+	if err != nil {
+		return nil, err
+	}
+
+	defer fileHanle.Close()
+
+	reader := bufio.NewReader(fileHanle)
+
+	var results []string
+	for {
+		line, _, err := reader.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		results = append(results, string(line))
+	}
+	return results, nil
 }
 
 type SimpleFileReader struct {

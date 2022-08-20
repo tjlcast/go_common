@@ -15,5 +15,5 @@ require (
 	github.com/rs/xid v1.4.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/goconvey v1.7.2 // indirect
-	github.com/tjlcast/shardmap v1.0.0
+	github.com/stretchr/testify v1.7.1
 )
