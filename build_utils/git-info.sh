@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 commit_seql=$(git rev-parse HEAD)
 commit_branch=$(git rev-parse --abbrev-ref HEAD)
 commit_detail=$(git log -1)
@@ -7,7 +9,7 @@ echo "branch:"$commit_seql
 echo "commit:"$commit_branch
 echo "detail:"$commit_detail
 
-packageName="main"
+packageName=$1
 
 str="
 package "$packageName";

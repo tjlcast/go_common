@@ -1,6 +1,6 @@
-appName=$1
+#!/usr/bin/env bash
 
-./git-info.sh
+appName=$1
 
 echo "build to win."
 go env -w CGO_ENABLED=0 GOOS=windows GOARCH=amd64

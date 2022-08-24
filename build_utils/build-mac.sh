@@ -1,6 +1,6 @@
-appName=$1
+#!/usr/bin/env bash
 
-./git-info.sh
+appName=$1
 
 echo "build to mac."
 go env -w CGO_ENABLED=1 GOOS=darwin GOARCH=amd64

@@ -1,5 +1,10 @@
+#!/usr/bin/env bash
+
 osType=$1
 appName="xxxx"
+packageName="main"
+
+./git-info.sh $packageName
 
 if [ -z $osType ]; then
     osType="linux"
@@ -16,8 +21,8 @@ else
     ./build-linux.sh $appName
 fi
 
-# back to mac.
 go env -w CGO_ENABLED=1 GOOS=darwin GOARCH=amd64
-echo "Back to mac."
+#go env -w CGO_ENABLED=1 GOOS=linux GOARCH=amd64
+#go env -w CGO_ENABLED=1 GOOS=darwin GOARCH=amd64
 
 echo "Finish build."
