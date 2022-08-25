@@ -3,6 +3,7 @@ module github.com/tjlcast/go_common
 go 1.16
 
 require (
+	github.com/AlecAivazis/survey/v2 v2.3.5
 	github.com/Unknwon/goconfig v1.0.0
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/fsnotify/fsnotify v1.5.4

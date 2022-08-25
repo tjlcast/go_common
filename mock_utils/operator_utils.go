@@ -2,6 +2,7 @@ package mock_utils
 
 import (
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/rs/xid"
 	"github.com/tjlcast/go_common/executor_utils"
 	"github.com/tjlcast/go_common/file_utils"
@@ -31,6 +32,12 @@ type Command struct {
 }
 
 type FuncMap map[string]*Command
+
+var (
+	Model	int = 0 // 0: backend or 1: command
+	OperChan chan string
+	Banner = ">>>>>>>> Test Start >>>>>>>>"
+)
 
 func GeneratCommandMapper(funcArr []func(string, string)) FuncMap {
 	commandMapper := make(map[string]*Command)
@@ -92,8 +99,13 @@ func NewMockOPClient(name string, clearCommand string, commands map[string]*Comm
 
 func (c *MockOPClient) PrintSample() {
 	for commandName, _ := range c.commands {
-		sprintf := fmt.Sprintf("touch '%s-id-arg1.op'", commandName)
-		fmt.Println(sprintf)
+		if Model == 0 {
+			sprintf := fmt.Sprintf("touch '%s-id-10!1.op'", commandName)
+			fmt.Println(sprintf)
+		} else {
+			sprintf := fmt.Sprintf("%s-id-10!1.op", commandName)
+			fmt.Println(sprintf)
+		}
 	}
 }
 
@@ -116,7 +128,7 @@ func (c *MockOPClient) Loop(basePath string) {
 	c.pool = pool
 	taskMap := make(map[string][]*executor_utils.Task)
 	c.taskMapper = taskMap
-	OperChan := make(chan string)
+	OperChan = make(chan string)
 	c.operatorParseChan = OperChan
 	c.taskClearChan = make(chan string)
 
@@ -196,6 +208,20 @@ func (c *MockOPClient) Loop(basePath string) {
 		}
 	}()
 
+	fmt.Println(Banner,
+		"\n" + log_utils.Yellow("Now model is " + strconv.Itoa(Model)))
+	c.PrintSample()
+
+	if Model == 0 {
+		c.backend(basePath)
+	} else if Model == 1 {
+		c.command(basePath)
+	} else {
+		panic("Not support model: " + strconv.Itoa(Model))
+	}
+}
+
+func (c *MockOPClient) backend(basePath string) {
 	go func() {
 		for true {
 			time.Sleep(1 * time.Second)
@@ -213,9 +239,38 @@ func (c *MockOPClient) Loop(basePath string) {
 			_ = os.Remove(commandFiles[0])
 		}
 	}()
-
-	log_utils.Logger.Info("Test start>>>>>>>>>")
 	loop()
+}
+
+func (c *MockOPClient) command(basePath string) {
+	var CustomOpt = func(options *survey.AskOptions) error {
+		options.PromptConfig.Icons.Question.Text = "$:"
+		return nil
+	}
+
+	for {
+		line := ""
+
+		prompt := &survey.Input{}
+		err := survey.AskOne(prompt, &line, CustomOpt)
+
+		// sys
+		if line == "exit" || line == "quit" || err != nil {
+			return
+		}
+
+		if line == "help" || line == "-h" || line == "--h" {
+			c.PrintSample()
+			continue
+		}
+
+		// business
+		if strings.HasSuffix(line, OP_SUFFIX) {
+			OperChan <- line
+		} else {
+			fmt.Println("Incorrect input: commands should end with op." )
+		}
+	}
 }
 
 func loop() {
