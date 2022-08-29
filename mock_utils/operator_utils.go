@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/rs/xid"
+	"github.com/tjlcast/go_common/arr_utils"
 	"github.com/tjlcast/go_common/executor_utils"
 	"github.com/tjlcast/go_common/file_utils"
 	"github.com/tjlcast/go_common/log_utils"
@@ -269,6 +270,17 @@ func (c *MockOPClient) command(basePath string) {
 			OperChan <- line
 		} else {
 			fmt.Println("Incorrect input: commands should end with op." )
+		}
+
+		// tips
+		if line != "" {
+			var guessCommands arr_utils.ArrString
+			for commandName, _ := range c.commands {
+				if strings.HasPrefix(commandName, line) {
+					guessCommands.Append(commandName)
+				}
+			}
+			fmt.Println(strings.Join(guessCommands, "\n\r"))
 		}
 	}
 }
