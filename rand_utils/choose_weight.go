@@ -43,3 +43,12 @@ func (chs Chooser) Pick() interface{} {
 	i := sort.SearchInts(chs.totals, r) // 核心点该方法使用二分法，找到对应的下标，如果没有则为大于该数的+1 下标，可能为len(a)即数组长度。
 	return chs.data[i].Item
 }
+
+// Pick returns a single weighted random Choice.Item from the Chooser.
+func (chs Chooser) PickItemAndScore() (interface{}, uint) {
+	r := rand.Intn(chs.max) + 1 // 使用最大值获取随机数，避免超过范围，随机生成的数需要排除0，故加1
+	i := sort.SearchInts(chs.totals, r) // 核心点该方法使用二分法，找到对应的下标，如果没有则为大于该数的+1 下标，可能为len(a)即数组长度。
+
+	choice := chs.data[i]
+	return choice.Item, choice.Weight
+}

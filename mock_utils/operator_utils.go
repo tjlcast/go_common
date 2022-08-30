@@ -35,9 +35,9 @@ type Command struct {
 type FuncMap map[string]*Command
 
 var (
-	Model	int = 0 // 0: backend or 1: command
+	Model    int = 0 // 0: backend or 1: command
 	OperChan chan string
-	Banner = ">>>>>>>> Test Start >>>>>>>>"
+	Banner   = ">>>>>>>> Test Start >>>>>>>>"
 )
 
 func GeneratCommandMapper(funcArr []func(string, string)) FuncMap {
@@ -99,15 +99,24 @@ func NewMockOPClient(name string, clearCommand string, commands map[string]*Comm
 }
 
 func (c *MockOPClient) PrintSample() {
-	for commandName, _ := range c.commands {
-		if Model == 0 {
-			sprintf := fmt.Sprintf("touch '%s-id-10!1.op'", commandName)
-			fmt.Println(sprintf)
-		} else {
-			sprintf := fmt.Sprintf("%s-id-10!1.op", commandName)
-			fmt.Println(sprintf)
-		}
+	samples := c.EachSample()
+	for _, sample := range samples {
+		fmt.Println(sample)
 	}
+}
+
+func (c *MockOPClient) EachSample() []string {
+	var examples []string
+	for commandName, _ := range c.commands {
+		var sprintf string
+		if Model == 0 {
+			sprintf = fmt.Sprintf("touch '%s-id-10!1.op'", commandName)
+		} else {
+			sprintf = fmt.Sprintf("%s-id-10!1.op", commandName)
+		}
+		examples = append(examples, sprintf)
+	}
+	return examples
 }
 
 func (c *MockOPClient) clear() {
@@ -210,7 +219,7 @@ func (c *MockOPClient) Loop(basePath string) {
 	}()
 
 	fmt.Println(Banner,
-		"\n" + log_utils.Yellow("Now model is " + strconv.Itoa(Model)))
+		"\n"+log_utils.Yellow("Now model is "+strconv.Itoa(Model)))
 	c.PrintSample()
 
 	if Model == 0 {
@@ -249,18 +258,29 @@ func (c *MockOPClient) command(basePath string) {
 		return nil
 	}
 
+	var history []string
+	var paste string
+
 	for {
 		line := ""
 
-		prompt := &survey.Input{}
-		err := survey.AskOne(prompt, &line, CustomOpt)
+		if paste == "" {
+			// in
+			prompt := &survey.Input{}
+			err := survey.AskOne(prompt, &line, CustomOpt)
 
-		// sys
-		if line == "exit" || line == "quit" || err != nil {
-			return
+			// sys
+			if line == "exit" || line == "quit" || err != nil {
+				return
+			}
+		} else {
+			// copy
+			line = paste
+			paste = ""
+			fmt.Println(log_utils.Blue(line))
 		}
 
-		if line == "help" || line == "-h" || line == "--h" {
+		if line == "help" || line == "--h" || line == "-H" || line == "-h" {
 			c.PrintSample()
 			continue
 		}
@@ -268,19 +288,51 @@ func (c *MockOPClient) command(basePath string) {
 		// business
 		if strings.HasSuffix(line, OP_SUFFIX) {
 			OperChan <- line
-		} else {
-			fmt.Println("Incorrect input: commands should end with op." )
+			history = append(history, line)
+			if len(history) > 8 {
+				rest := len(history) - 8
+				history = history[rest:]
+			}
 		}
 
 		// tips
-		if line != "" {
+		if line == "!" {
+			// ! show history.
+			var outHistory []string
+			for i, cmd := range history {
+				outHistory = append(outHistory, fmt.Sprintf("%d %s", i, cmd))
+			}
+			fmt.Println(strings.Join(outHistory, "\n\r"))
+		} else if line == "!!" && len(history) != 0 {
+			// !! execute the last command.
+			lastLine := history[len(history)-1]
+			paste = lastLine
+		} else if strings.HasPrefix(line, "!") {
+			// !! execute the specify command.
+			line = line[1:]
+			i, err := strconv.Atoi(line)
+			if err != nil {
+				fmt.Println("Should input !{num} to select history.")
+				continue
+			}
+			if !(0 <= i && i < len(history)) {
+				fmt.Println("Should in history no.")
+				continue
+			}
+			lastLine := history[i]
+			paste = lastLine
+		} else if line != "" {
+			// give the exmples via prefix.
 			var guessCommands arr_utils.ArrString
-			for commandName, _ := range c.commands {
+			for _, commandName := range c.EachSample() {
 				if strings.HasPrefix(commandName, line) {
 					guessCommands.Append(commandName)
 				}
 			}
 			fmt.Println(strings.Join(guessCommands, "\n\r"))
+		} else {
+			// If empty, then show common tip.
+			fmt.Println("Incorrect input: commands should end with op.")
 		}
 	}
 }
