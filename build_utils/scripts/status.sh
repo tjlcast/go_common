@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-appName=$(cat .app)
+appName=$(./app.sh)
 
 ps -ef | grep -E "./"$appName

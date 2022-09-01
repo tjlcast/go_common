@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-appName="awesome"
+appName=$(./app.sh)
 
 nohup ./$appName &
 echo $appName > .app
